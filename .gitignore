@@ -1,8 +1,10 @@
 *.jtl
 *.log
 results/
+reports/
 __pycache__/
 .DS_Store
 .idea/
 *.bak
 jmeter.log
+temp/
