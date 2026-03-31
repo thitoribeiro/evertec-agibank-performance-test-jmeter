@@ -1,0 +1,71 @@
+name: Spike Test — BlazeDemo
+
+on:
+  workflow_dispatch:
+    inputs:
+      threads:
+        description: "Concurrent users (multiplier applied in JMX)"
+        required: false
+        default: "50"
+      ramp_up:
+        description: "Ramp-up period (seconds)"
+        required: false
+        default: "10"
+      duration:
+        description: "Test duration (seconds)"
+        required: false
+        default: "60"
+
+env:
+  JMETER_VERSION: "5.6.3"
+
+jobs:
+  spike-test:
+    name: Run Spike Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache JMeter
+        id: cache-jmeter
+        uses: actions/cache@v4
+        with:
+          path: apache-jmeter-${{ env.JMETER_VERSION }}
+          key: jmeter-${{ env.JMETER_VERSION }}
+
+      - name: Install JMeter
+        if: steps.cache-jmeter.outputs.cache-hit != 'true'
+        run: |
+          curl -Lo jmeter.tgz \
+            "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
+          tar -xzf jmeter.tgz
+          rm jmeter.tgz
+
+      - name: Add JMeter to PATH
+        run: echo "$PWD/apache-jmeter-${JMETER_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Run spike test
+        env:
+          CI: "true"
+          THREADS:  ${{ inputs.threads }}
+          RAMP_UP:  ${{ inputs.ramp_up }}
+          DURATION: ${{ inputs.duration }}
+        run: bash scripts/run-spike-test.sh
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spike-test-report-${{ github.run_id }}
+          path: reports/spike/
+          retention-days: 30
+
+      - name: Upload JTL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spike-test-jtl-${{ github.run_id }}
+          path: results/spike/spike-test-results.jtl
+          retention-days: 30

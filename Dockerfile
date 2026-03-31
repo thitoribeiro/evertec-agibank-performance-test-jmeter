@@ -18,8 +18,9 @@ WORKDIR /test
 COPY scripts/ scripts/
 COPY config/  config/
 
-RUN mkdir -p results/load reports/load
+RUN mkdir -p results/load reports/load results/spike reports/spike
 
 VOLUME ["/test/results", "/test/reports"]
 
-ENTRYPOINT ["bash", "scripts/run-load-test.sh"]
+# Default command if none provided
+CMD ["bash", "scripts/run-load-test.sh"]

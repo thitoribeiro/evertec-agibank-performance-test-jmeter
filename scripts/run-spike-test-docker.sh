@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMAGE="blazedemo-perf-test"
+REPORT_DIR="$(pwd)/reports/spike"
+
+echo "==> Building Docker image..."
+docker build -t "$IMAGE" .
+
+echo "==> Running spike test in container..."
+docker run --rm \
+  ${THREADS:+  -e THREADS="$THREADS"} \
+  ${RAMP_UP:+  -e RAMP_UP="$RAMP_UP"} \
+  ${DURATION:+ -e DURATION="$DURATION"} \
+  -v "$(pwd)/results:/test/results" \
+  -v "$(pwd)/reports:/test/reports" \
+  "$IMAGE" bash scripts/run-spike-test.sh
+
+echo "==> Opening report..."
+if command -v open &>/dev/null; then
+  open "$REPORT_DIR/index.html"
+elif command -v xdg-open &>/dev/null; then
+  xdg-open "$REPORT_DIR/index.html"
+else
+  echo "Report at: $REPORT_DIR/index.html"
+fi

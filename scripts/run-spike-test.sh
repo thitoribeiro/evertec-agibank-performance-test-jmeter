@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-JMX="scripts/blazedemo-load-test.jmx"
-JTL="results/load/load-test-results.jtl"
-REPORT="reports/load"
+JMX="scripts/blazedemo-spike-test.jmx"
+JTL="results/spike/spike-test-results.jtl"
+REPORT="reports/spike"
 
-# Acceptance criteria
-THRESHOLD_THROUGHPUT=250   # req/s
-THRESHOLD_P90=2000         # ms
-THRESHOLD_ERROR_RATE=1.0   # %
+# Acceptance criteria aligned with project requirements
+THRESHOLD_THROUGHPUT=250    # req/s (baseline target)
+THRESHOLD_P90=2000          # ms (hard limit)
+THRESHOLD_ERROR_RATE=1.0    # % (standard limit)
 
-# Runtime overrides via env vars (used by Docker and CI/CD)
+# Runtime overrides via env vars
 EXTRA_ARGS=""
 [[ -n "${THREADS:-}"   ]] && EXTRA_ARGS="$EXTRA_ARGS -Jthreads=$THREADS"
 [[ -n "${RAMP_UP:-}"   ]] && EXTRA_ARGS="$EXTRA_ARGS -Jramp_up=$RAMP_UP"
 [[ -n "${DURATION:-}"  ]] && EXTRA_ARGS="$EXTRA_ARGS -Jduration=$DURATION"
 
-echo "==> Cleaning previous results..."
+echo "==> Cleaning previous spike results..."
 mkdir -p "$(dirname "$JTL")" "$REPORT"
 rm -f "$JTL"
 rm -rf "$REPORT" && mkdir -p "$REPORT"
 
-echo "==> Running load test..."
+echo "==> Running spike test..."
 # shellcheck disable=SC2086
 jmeter -n \
   -t "$JMX" \
@@ -32,9 +32,9 @@ jmeter -n \
   $EXTRA_ARGS
 
 echo ""
-echo "==> Analysing results..."
+echo "==> Analysing spike results..."
 python3 scripts/analyze-results.py \
-  --title       "Load Test" \
+  --title       "Spike Test" \
   --jtl         "$JTL" \
   --throughput  "$THRESHOLD_THROUGHPUT" \
   --p90         "$THRESHOLD_P90" \
