@@ -5,6 +5,5 @@ reports/
 __pycache__/
 .DS_Store
 .idea/
+.vscode/
 *.bak
-jmeter.log
-temp/

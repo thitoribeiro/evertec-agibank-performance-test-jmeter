@@ -5,7 +5,8 @@ ENV JMETER_HOME=/opt/apache-jmeter-${JMETER_VERSION}
 ENV PATH="${JMETER_HOME}/bin:${PATH}"
 ENV IN_DOCKER=true
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl python3 && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl python3 && \
     rm -rf /var/lib/apt/lists/* && \
     curl -Lo /tmp/jmeter.tgz \
       "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz" && \
@@ -17,7 +18,7 @@ WORKDIR /test
 COPY scripts/ scripts/
 COPY config/  config/
 
-RUN mkdir -p results/load results/spike reports/load reports/spike
+RUN mkdir -p results/load reports/load
 
 VOLUME ["/test/results", "/test/reports"]
 

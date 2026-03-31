@@ -9,10 +9,9 @@ docker build -t "$IMAGE" .
 
 echo "==> Running test in container..."
 docker run --rm \
-  -e IN_DOCKER=true \
-  -e THREADS="${THREADS:-}" \
-  -e RAMP_UP="${RAMP_UP:-}" \
-  -e DURATION="${DURATION:-}" \
+  ${THREADS:+  -e THREADS="$THREADS"} \
+  ${RAMP_UP:+  -e RAMP_UP="$RAMP_UP"} \
+  ${DURATION:+ -e DURATION="$DURATION"} \
   -v "$(pwd)/results:/test/results" \
   -v "$(pwd)/reports:/test/reports" \
   "$IMAGE"
