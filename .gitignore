@@ -1,0 +1,8 @@
+*.jtl
+*.log
+results/
+__pycache__/
+.DS_Store
+.idea/
+*.bak
+jmeter.log
