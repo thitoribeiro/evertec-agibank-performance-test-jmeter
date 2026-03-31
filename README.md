@@ -1,6 +1,6 @@
 # evertec-agibank-performance-test-jmeter
 
-Performance test automation for BlazeDemo using Apache JMeter.
+Performance test automation for BlazeDemo using Apache JMeter 5.6.3.
 
 ## Project Structure
 
@@ -9,14 +9,18 @@ Performance test automation for BlazeDemo using Apache JMeter.
 ├── Dockerfile
 ├── .github/
 │   └── workflows/
-│       └── load-test.yml            # Manual GitHub Actions trigger
+│       ├── load-test.yml            # Load test GitHub Actions trigger
+│       └── spike-test.yml           # Spike test GitHub Actions trigger
 ├── scripts/
-│   ├── blazedemo-load-test.jmx      # Test logic (samplers, assertions, timers)
-│   ├── run-load-test.sh             # Local execution + acceptance criteria report
-│   └── run-load-test-docker.sh      # Docker execution + opens report on host
+│   ├── blazedemo-load-test.jmx      # Load test logic (250 threads target)
+│   ├── blazedemo-spike-test.jmx     # Spike test logic (multi-phase peaks)
+│   ├── run-load-test.sh             # Load test local execution
+│   ├── run-spike-test.sh            # Spike test local execution
+│   ├── run-load-test-docker.sh      # Load test via Docker
+│   └── run-spike-test-docker.sh     # Spike test via Docker
 ├── config/
-│   ├── load-test.properties         # Scenario parameters (threads, duration, host…)
-│   └── jtl-save.properties          # JTL column configuration for HTML report
+│   ├── load-test.properties         # Scenario parameters (host, protocol…)
+│   └── jtl-save.properties          # JTL column configuration
 ├── results/
 │   ├── load/                        # Load test raw results (.jtl)
 │   └── spike/                       # Spike test raw results (.jtl)
@@ -25,15 +29,9 @@ Performance test automation for BlazeDemo using Apache JMeter.
     └── spike/                       # Spike test HTML dashboard
 ```
 
-## Separation of Concerns
-
-| File | Responsibility |
-|---|---|
-| `scripts/*.jmx` | Test scenario: flow, samplers, assertions, think time |
-| `config/load-test.properties` | Runtime parameters: host, threads, timeouts |
-| `config/jtl-save.properties` | Output format: JTL columns required for HTML report |
-
 ## Acceptance Criteria
+
+Targets for both Load and Spike scenarios (baseline/peaks):
 
 | Metric | Target |
 |---|---|
@@ -45,56 +43,53 @@ Performance test automation for BlazeDemo using Apache JMeter.
 
 ## Running Tests
 
-### Local
+### Local Execution (JMeter 5.6.3+ / Java 17+ / Python 3)
 
-Requires JMeter 5.6.3+ and Java 17+ installed.
-
+**Load Test:**
 ```bash
 bash scripts/run-load-test.sh
 ```
 
-Cleans previous results, executes the test, prints the acceptance criteria verdict and opens the HTML report automatically.
-
-**Override parameters without editing files:**
+**Spike Test:**
 ```bash
-THREADS=50 DURATION=60 bash scripts/run-load-test.sh
+bash scripts/run-spike-test.sh
 ```
+
+*Note: You can override parameters via environment variables:*
+`THREADS=100 DURATION=60 bash scripts/run-load-test.sh`
 
 ---
 
-### Docker
+### Docker Execution (Docker Engine)
 
-Requires Docker installed. No JMeter or Java needed locally.
+No JMeter or Java required locally. Reports are opened automatically on the host.
 
+**Load Test:**
 ```bash
 bash scripts/run-load-test-docker.sh
 ```
 
-Builds the image, runs the container with results/reports mounted as volumes, and opens the HTML report on the host after the test completes.
-
-**Override parameters:**
+**Spike Test:**
 ```bash
-THREADS=50 DURATION=60 bash scripts/run-load-test-docker.sh
+bash scripts/run-spike-test-docker.sh
 ```
 
 ---
 
-### GitHub Actions (manual)
+### GitHub Actions (Manual Trigger)
 
-1. Go to **Actions → Load Test — BlazeDemo → Run workflow**
-2. Fill in the optional parameters (threads, ramp_up, duration)
-3. Click **Run workflow**
+1. Go to **Actions** tab in GitHub.
+2. Select either **Load Test — BlazeDemo** or **Spike Test — BlazeDemo**.
+3. Click **Run workflow**, fill optional parameters, and click the green button.
 
-After the run:
-- The acceptance criteria verdict appears in the **job summary**
-- The HTML report and JTL file are available as **artifacts** (retained 30 days)
+**Outputs:**
+- Acceptance criteria verdict in **Job Summary**.
+- Full HTML Report and JTL file as **Artifacts** (30-day retention).
 
 ---
 
-## Requirements
+## Technical Details
 
-| Environment | Requirements |
-|---|---|
-| Local | JMeter 5.6.3+, Java 17+, Python 3 |
-| Docker | Docker Engine |
-| GitHub Actions | No setup required |
+- **Sequential Execution**: Spike tests use multiple Thread Groups executed in order (Baseline → Spike 1 → Recov 1 → Spike 2 → Recov 2 → Max Spike → Final Recov).
+- **Inlined Flow**: Both tests share the same HTTP flow (Home → Select → Purchase → Confirm) for consistency.
+- **Reporting**: Acceptance criteria are automatically analyzed by `scripts/analyze-results.py` after each run.
